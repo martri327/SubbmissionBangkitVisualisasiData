@@ -47,6 +47,11 @@ most_positive_product = product_reviews.loc[product_reviews['review_score'].idxm
 
 # Determine if the product is cheap or expensive
 median_price = product_reviews['price'].median()
+
+# Ensure that we work on a copy to avoid SettingWithCopyWarning
+most_positive_product = most_positive_product.copy()
+
+# Modify the DataFrame with category based on price comparison
 most_positive_product['category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
 
 # Analysis 2: Rata-rata waktu pengiriman untuk setiap pesanan
