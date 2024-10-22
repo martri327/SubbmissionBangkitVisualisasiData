@@ -3,10 +3,6 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
 
 # Base directory path using relative path
 base_dir = 'E-commerce-public-dataset/'
@@ -24,24 +20,10 @@ dataset_filenames = {
     'category': 'product_category_name_translation.csv'
 }
 
-# Try loading datasets and log their shapes
-data = {}
-for name, filename in dataset_filenames.items():
-    file_path = os.path.join(base_dir, filename)
-    if not os.path.exists(file_path):
-        st.error(f'File not found: {file_path}')
-        logging.error(f'File not found: {file_path}')
-        st.stop()
-    
-    try:
-        data[name] = pd.read_csv(file_path)
-        logging.info(f'{name} dataset loaded successfully with shape: {data[name].shape}')
-    except Exception as e:
-        st.error(f'Error loading dataset {name}: {e}')
-        logging.error(f'Error loading dataset {name}: {e}')
-        st.stop()
+# Opening datasets and storing them in a dictionary
+data = {name: pd.read_csv(os.path.join(base_dir, filename)) for name, filename in dataset_filenames.items()}
 
-# Load datasets into individual variables
+# Load datasets
 orders_df = data['orders']
 items_df = data['items']
 products_df = data['products']
@@ -50,58 +32,37 @@ customers_df = data['customers']
 geolocation_df = data['geolocation']
 
 # Analysis 1: Produk dengan ulasan paling positif
-try:
-    # Merge datasets to get product information in reviews
-    merged_df = pd.merge(reviews_df, items_df, on='order_id')
-    merged_df = pd.merge(merged_df, products_df, on='product_id')
+# Merge datasets to get product information in reviews
+merged_df = pd.merge(reviews_df, items_df, on='order_id')
+merged_df = pd.merge(merged_df, products_df, on='product_id')
 
-    # Calculate average review score for each product
-    product_reviews = merged_df.groupby('product_id').agg({
-        'review_score': 'mean',
-        'price': 'mean'
-    }).reset_index()
+# Calculate average review score for each product
+product_reviews = merged_df.groupby('product_id').agg({
+    'review_score': 'mean',
+    'price': 'mean'
+}).reset_index()
 
-    # Identify the product with the highest average review score
-    if not product_reviews.empty:
-        most_positive_product_index = product_reviews['review_score'].idxmax()
-        most_positive_product = product_reviews.iloc[most_positive_product_index].copy()
+# Identify the product with the highest average review score
+most_positive_product = product_reviews.loc[product_reviews['review_score'].idxmax()]
 
-        # Determine if the product is cheap or expensive
-        median_price = product_reviews['price'].median()
-        most_positive_product['category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
-        
-        logging.info('Analysis 1 (Produk dengan ulasan paling positif) completed successfully')
-    else:
-        st.error("Tidak ada data untuk analisis produk.")
-        logging.error("Tidak ada data untuk analisis produk.")
-        st.stop()
-
-except Exception as e:
-    logging.error(f'Error in Analysis 1: {e}')
-    st.error(f'Error in Analysis 1: {e}')
-    st.stop()
+# Determine if the product is cheap or expensive
+median_price = product_reviews['price'].median()
+most_positive_product['category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
 
 # Analysis 2: Rata-rata waktu pengiriman untuk setiap pesanan
-try:
-    # Merge datasets to get customer location in orders
-    orders_customers_df = pd.merge(orders_df, customers_df, on='customer_id')
+# Merge datasets to get customer location in orders
+orders_customers_df = pd.merge(orders_df, customers_df, on='customer_id')
 
-    # Calculate delivery time for each order
-    orders_customers_df['order_purchase_timestamp'] = pd.to_datetime(orders_customers_df['order_purchase_timestamp'])
-    orders_customers_df['order_delivered_customer_date'] = pd.to_datetime(orders_customers_df['order_delivered_customer_date'])
-    orders_customers_df['delivery_time'] = (orders_customers_df['order_delivered_customer_date'] - orders_customers_df['order_purchase_timestamp']).dt.days
+# Calculate delivery time for each order
+orders_customers_df['order_purchase_timestamp'] = pd.to_datetime(orders_customers_df['order_purchase_timestamp'])
+orders_customers_df['order_delivered_customer_date'] = pd.to_datetime(orders_customers_df['order_delivered_customer_date'])
+orders_customers_df['delivery_time'] = (orders_customers_df['order_delivered_customer_date'] - orders_customers_df['order_purchase_timestamp']).dt.days
 
-    # Merge with geolocation data
-    orders_geo_df = pd.merge(orders_customers_df, geolocation_df, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix')
+# Merge with geolocation data
+orders_geo_df = pd.merge(orders_customers_df, geolocation_df, left_on='customer_zip_code_prefix', right_on='geolocation_zip_code_prefix')
 
-    # Calculate average delivery time for each location
-    avg_delivery_time_by_location = orders_geo_df.groupby('geolocation_city')['delivery_time'].mean().reset_index()
-
-    logging.info('Analysis 2 (Rata-rata waktu pengiriman) completed successfully')
-except Exception as e:
-    logging.error(f'Error in Analysis 2: {e}')
-    st.error(f'Error in Analysis 2: {e}')
-    st.stop()
+# Calculate average delivery time for each location
+avg_delivery_time_by_location = orders_geo_df.groupby('geolocation_city')['delivery_time'].mean().reset_index()
 
 # Streamlit app
 st.title('E-Commerce Data Analysis')
