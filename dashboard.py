@@ -62,13 +62,19 @@ try:
     }).reset_index()
 
     # Identify the product with the highest average review score
-    most_positive_product = product_reviews.loc[product_reviews['review_score'].idxmax()].copy()
+    if not product_reviews.empty:
+        most_positive_product = product_reviews.loc[product_reviews['review_score'].idxmax()].copy()
 
-    # Determine if the product is cheap or expensive
-    median_price = product_reviews['price'].median()
-    most_positive_product['category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
-    
-    logging.info('Analysis 1 (Produk dengan ulasan paling positif) completed successfully')
+        # Determine if the product is cheap or expensive
+        median_price = product_reviews['price'].median()
+        most_positive_product.loc[:, 'category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
+        
+        logging.info('Analysis 1 (Produk dengan ulasan paling positif) completed successfully')
+    else:
+        st.error("Tidak ada data untuk analisis produk.")
+        logging.error("Tidak ada data untuk analisis produk.")
+        st.stop()
+
 except Exception as e:
     logging.error(f'Error in Analysis 1: {e}')
     st.error(f'Error in Analysis 1: {e}')
