@@ -25,15 +25,21 @@ dataset_filenames = {
 }
 
 # Try loading datasets and log their shapes
-try:
-    data = {name: pd.read_csv(os.path.join(base_dir, filename)) for name, filename in dataset_filenames.items()}
-    logging.info('All datasets loaded successfully')
-    for name, df in data.items():
-        logging.info(f'{name} dataset shape: {df.shape}')
-except Exception as e:
-    logging.error(f'Error loading datasets: {e}')
-    st.error(f'Error loading datasets: {e}')
-    st.stop()
+data = {}
+for name, filename in dataset_filenames.items():
+    file_path = os.path.join(base_dir, filename)
+    if not os.path.exists(file_path):
+        st.error(f'File not found: {file_path}')
+        logging.error(f'File not found: {file_path}')
+        st.stop()
+    
+    try:
+        data[name] = pd.read_csv(file_path)
+        logging.info(f'{name} dataset loaded successfully with shape: {data[name].shape}')
+    except Exception as e:
+        st.error(f'Error loading dataset {name}: {e}')
+        logging.error(f'Error loading dataset {name}: {e}')
+        st.stop()
 
 # Load datasets into individual variables
 orders_df = data['orders']
