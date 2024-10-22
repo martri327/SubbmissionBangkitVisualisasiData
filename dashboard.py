@@ -60,7 +60,7 @@ try:
 
     # Determine if the product is cheap or expensive
     median_price = product_reviews['price'].median()
-    most_positive_product.at['category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
+    most_positive_product['category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
     
     logging.info('Analysis 1 (Produk dengan ulasan paling positif) completed successfully')
 except Exception as e:
