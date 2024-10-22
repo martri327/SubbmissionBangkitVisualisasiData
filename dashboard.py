@@ -63,11 +63,12 @@ try:
 
     # Identify the product with the highest average review score
     if not product_reviews.empty:
-        most_positive_product = product_reviews.loc[product_reviews['review_score'].idxmax()].copy()
+        most_positive_product_index = product_reviews['review_score'].idxmax()
+        most_positive_product = product_reviews.iloc[most_positive_product_index].copy()
 
         # Determine if the product is cheap or expensive
         median_price = product_reviews['price'].median()
-        most_positive_product.loc[:, 'category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
+        most_positive_product['category'] = 'Murah' if most_positive_product['price'] < median_price else 'Mahal'
         
         logging.info('Analysis 1 (Produk dengan ulasan paling positif) completed successfully')
     else:
